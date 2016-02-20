@@ -1,0 +1,4 @@
+[MESSAGE CONTROL]
+
+disable=missing-docstring,line-too-long,invalid-name,blacklisted-name,no-name-in-module,import-error,too-few-public-methods,attribute-defined-outside-init,unused-argument
+reports=no
