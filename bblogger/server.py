@@ -1,22 +1,12 @@
 import logging
 import socket
+import time
 import yaml
 from flask import Flask, request
 
 config = yaml.load(open('conf.yml').read())
-
-# Stifle most of the output from Werkzeug.
+# Stifle most Werkzeug output.
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-formatter = logging.Formatter(
-    '%(message)s'
-)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
 app = Flask(__name__, static_url_path="")
 
 
@@ -34,7 +24,17 @@ def enabled(channel):
 @app.route('/log/<channel>', methods=['POST'])
 def post(channel):
     client = socket.gethostbyaddr(request.remote_addr)[0]
-    logger.info('%s [%s] %s', client, channel, request.form.get('data'))
+    print '{0} [{1}:{2}] {3}\n{4}:{5} {6}\n{7}\n'.format(
+        client,
+        channel,
+        request.form['levelname'],
+        time.ctime(float(request.form['created'])),
+        request.form['pathname'],
+        request.form['lineno'],
+        request.form['funcName'],
+        request.form['msg']
+        # exc_info????
+    )
     return '', 200
 
 if __name__ == "__main__":

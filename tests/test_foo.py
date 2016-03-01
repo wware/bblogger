@@ -1,5 +1,6 @@
 import logging
 import os
+import pprint
 import requests
 import foo
 import bblogger
@@ -35,17 +36,33 @@ def test_dumb(monkeypatch):
 
     logger.info('foo')
     assert x[0] == ('http://localhost:5000/log/foo',)
-    assert x[1] == {'data': {
-        'data': here + '/test_foo.py:36   foo'
-    }}
+    assert x[1] == {
+        'data': {
+            'created': x[1]['data']['created'],
+            'exc_info': None,
+            'funcName': 'test_dumb',
+            'levelname': 'INFO',
+            'lineno': 37,
+            'msg': 'foo',
+            'pathname': '/home/wware/static/bblogger/tests/test_foo.py'
+        }
+    }
 
     x = []
     logger.stack('abc')
     assert x[0] == ('http://localhost:5000/log/foo',)
-    assert x[1]['data']['data'].startswith(
-        here + '/test_foo.py:'
-    )
-    assert x[1]['data']['data'].endswith(
+    assert x[1] == {
+        'data': {
+            'created': x[1]['data']['created'],
+            'exc_info': None,
+            'funcName': 'test_dumb',
+            'levelname': 'ERROR',
+            'lineno': 52,
+            'msg': x[1]['data']['msg'],
+            'pathname': '/home/wware/static/bblogger/tests/test_foo.py'
+        }
+    }
+    assert x[1]['data']['msg'].endswith(
         'in test_dumb\n    logger.stack(\'abc\')\nabc'
     )
 
@@ -53,16 +70,11 @@ def test_dumb(monkeypatch):
     assert logger.isEnabledFor(logging.INFO) is True
 
     x = []
-    monkeypatch.setattr(server.logger, 'info', f)
+    monkeypatch.setattr(pprint, 'pprint', f)
     assert server.enabled('foo') == ('10', 200)
     assert int(server.enabled('zoo')[0]) > logging.CRITICAL
     with server.app.test_request_context() as RC:
         RC.request.form = {'data': 'abcd'}
         assert server.post('foo') == ('', 200)
         assert server.post('zoo') == ('', 200)
-    assert x == [
-        ('%s [%s] %s', 'localhost', 'foo', 'abcd'),
-        {},
-        ('%s [%s] %s', 'localhost', 'zoo', 'abcd'),
-        {}
-    ]
+    assert x == [({'data': 'abcd'},), {}, ({'data': 'abcd'},), {}]

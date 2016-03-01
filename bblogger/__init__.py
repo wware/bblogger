@@ -13,27 +13,32 @@ class BBLogger(logging.Logger):
         class BBHandler(logging.StreamHandler):
             def __init__(self, name):
                 super(BBHandler, self).__init__()
-                fmt = '%(pathname)s:%(lineno)s   %(message)s'
-                self.formatter = logging.Formatter(fmt)
                 self.name = name
 
             def emit(self, record):
+                data = {
+                    'levelname': record.levelname,
+                    'pathname': record.pathname,
+                    'lineno': record.lineno,
+                    'funcName': record.funcName,
+                    'exc_info': record.exc_info,
+                    'msg': record.msg,
+                    'created': record.created
+                }
                 try:
                     requests.post(
                         '{0}/log/{1}'.format(HOST, self.name),
-                        data={'data': self.formatter.format(record)}
+                        data=data
                     )
                 except:
                     pass
 
         handler = BBHandler(name)
-        handler.setLevel(logging.DEBUG)
         self.addHandler(handler)
-        self.name = name
 
     def pprint(self, thing):
         if self.isEnabledFor(logging.INFO):
-            self._log(logging.INFO, '\n' + pprint.pformat(thing), [])
+            self._log(logging.INFO, pprint.pformat(thing), [])
 
     def stack(self, msg=None):
         if self.isEnabledFor(logging.INFO):
@@ -42,7 +47,7 @@ class BBLogger(logging.Logger):
                 stuff.append(str(msg))
             else:
                 stuff[-1] = stuff[-1].rstrip()
-            self._log(logging.ERROR, '\n' + ''.join(stuff), [])
+            self._log(logging.ERROR, ''.join(stuff), [])
 
     def isEnabledFor(self, level):
         try:
@@ -51,15 +56,12 @@ class BBLogger(logging.Logger):
             return False
         return level >= int(R.text)
 
-_cache = {}
 
-
-def get_logger(name):
+def get_logger(name, _cache={}):
     """
     Memoized function that constructs (or gets a pre-existing instance of)
     a logger for a given name.
     """
-    if name in _cache:
-        return _cache[name]
-    _cache[name] = L = BBLogger(name)
-    return L
+    if name not in _cache:
+        _cache[name] = BBLogger(name)
+    return _cache[name]

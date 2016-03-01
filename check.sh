@@ -17,4 +17,4 @@ fi
 COV=$(ls bblogger/*.py | sed "s/^/--cov=/" | sed "s/\.py$//" | \
 	sed "s#/__init__##" | sed "s#/#.#" | tr "\n" " ")
 pep8 *.py tests/*.py && pylint *.py tests/*.py && \
-	PYTHONPATH=. py.test -v $COV --cov-report=term-missing tests
+	PYTHONPATH=. py.test -vv $COV --cov-report=term-missing tests
